@@ -1,0 +1,21 @@
+# CityPulse Configuration
+
+data_sources:
+  air_quality: "https://api.openaq.org/v2/measurements"
+  weather: "https://api.open-meteo.com/v1/forecast"
+  traffic: "https://data.transportation.gov/resource/traffic.json"  
+
+paths:
+  raw: "data/raw"
+  interim: "data/interim"
+  processed: "data/processed"
+  logs: "logs"
+
+forecast:
+  model: "prophet"
+  horizon_hours: 24
+  target: "aqi"
+
+visualization:
+  refresh_interval_min: 60
+  default_city: "Casablanca"

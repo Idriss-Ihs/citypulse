@@ -1,0 +1,9 @@
+pandas
+requests
+pyyaml
+prophet
+scikit-learn
+streamlit
+plotly
+geopandas
+matplotlib
