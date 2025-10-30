@@ -1,11 +1,9 @@
 """
-ingest_city_data.py
---------------------
-Fetch air quality and weather data from open APIs and save to data/raw.
+CityPulse - Unified Data Ingestion
+Fetches weather, air quality, mobility, energy and light activity data.
 """
 
-import requests
-import pandas as pd
+import requests, pandas as pd, zipfile, io
 from pathlib import Path
 import yaml
 from src.utils.logger import setup_logger
@@ -16,89 +14,90 @@ def load_config(path="src/config/settings.yaml"):
         return yaml.safe_load(f)
 
 
-def fetch_air_quality(cfg, logger):
-    """Fetch air quality data from Open-Meteo (free & global)."""
-    url = "https://air-quality-api.open-meteo.com/v1/air-quality"
-    params = {
-        "latitude": 33.5731,   # Casablanca
-        "longitude": -7.5898,
-        "hourly": "pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone,us_aqi"
-    }
-
-    logger.info("Fetching air quality data (Open-Meteo)...")
-    try:
-        resp = requests.get(url, params=params, timeout=20)
-        resp.raise_for_status()
-        data = resp.json()
-        df = pd.DataFrame(data["hourly"])
-        logger.info(f"Fetched {len(df)} air quality hourly records.")
-        return df
-    except Exception as e:
-        logger.error(f"Failed to fetch air quality: {e}")
-        return pd.DataFrame()
-def fetch_mobility_data(cfg, logger):
-    """Fetch recent mobility data (Google COVID mobility reports)."""
-    url = "https://www.gstatic.com/covid19/mobility/Region_Mobility_Report_CSVs.zip"
-    try:
-        logger.info("Fetching mobility data (Google)...")
-        zip_path = Path(cfg["paths"]["raw"]) / "mobility.zip"
-        Path(cfg["paths"]["raw"]).mkdir(parents=True, exist_ok=True)
-        with requests.get(url, stream=True, timeout=30) as r:
-            r.raise_for_status()
-            with open(zip_path, "wb") as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-
-        df = pd.read_csv(f"zip://{zip_path}!2023_MA_Region_Mobility_Report.csv")
-        logger.info(f"Fetched {len(df)} mobility rows.")
-        return df
-    except Exception as e:
-        logger.error(f"Failed to fetch mobility data: {e}")
-        return pd.DataFrame()
-
-
 def fetch_weather(cfg, logger):
-    """Fetch weather data from Open-Meteo API."""
+    lat, lon = cfg["city"]["latitude"], cfg["city"]["longitude"]
     url = cfg["data_sources"]["weather"]
-    params = {
-        "latitude": 33.5731,  # Casablanca
-        "longitude": -7.5898,
-        "hourly": "temperature_2m,precipitation,wind_speed_10m"
-    }
+    params = {"latitude": lat, "longitude": lon,
+              "hourly": "temperature_2m,precipitation,wind_speed_10m"}
     logger.info("Fetching weather data...")
     try:
-        resp = requests.get(url, params=params, timeout=15)
-        resp.raise_for_status()
-        data = resp.json()
-        df = pd.DataFrame(data["hourly"])
-        logger.info(f"Fetched {len(df)} weather records.")
+        r = requests.get(url, params=params, timeout=20); r.raise_for_status()
+        df = pd.DataFrame(r.json()["hourly"])
+        logger.info(f"Weather rows: {len(df)}")
         return df
     except Exception as e:
-        logger.error(f"Failed to fetch weather: {e}")
+        logger.error(f"Weather fetch failed: {e}")
         return pd.DataFrame()
 
 
-def save_data(df, name, path):
-    path = Path(path)
-    path.mkdir(parents=True, exist_ok=True)
-    output_file = path / f"{name}.csv"
-    df.to_csv(output_file, index=False)
-    return output_file
+def fetch_air_quality(cfg, logger):
+    lat, lon = cfg["city"]["latitude"], cfg["city"]["longitude"]
+    url = cfg["data_sources"]["air_quality"]
+    params = {"latitude": lat, "longitude": lon,
+              "hourly": "pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone,us_aqi"}
+    logger.info("Fetching air quality data...")
+    try:
+        r = requests.get(url, params=params, timeout=20); r.raise_for_status()
+        df = pd.DataFrame(r.json()["hourly"])
+        logger.info(f"Air-quality rows: {len(df)}")
+        return df
+    except Exception as e:
+        logger.error(f"Air quality fetch failed: {e}")
+        return pd.DataFrame()
+
+
+def fetch_mobility(cfg, logger):
+    url = cfg["data_sources"]["mobility_zip"]
+    logger.info("Fetching mobility data...")
+    try:
+        r = requests.get(url, timeout=30); r.raise_for_status()
+        z = zipfile.ZipFile(io.BytesIO(r.content))
+        # pick Morocco file dynamically
+        fname = [f for f in z.namelist() if "MA" in f and f.endswith(".csv")][0]
+        df = pd.read_csv(z.open(fname))
+        logger.info(f"Mobility rows: {len(df)}")
+        return df
+    except Exception as e:
+        logger.error(f"Mobility fetch failed: {e}")
+        return pd.DataFrame()
+
+
+def fetch_energy(cfg, logger):
+    url = cfg["data_sources"]["energy_csv"]
+    logger.info("Fetching energy data...")
+    try:
+        df = pd.read_csv(url)
+        df = df[df["Country"] == "Morocco"]
+        logger.info(f"Energy rows: {len(df)}")
+        return df
+    except Exception as e:
+        logger.error(f"Energy fetch failed: {e}")
+        return pd.DataFrame()
+
+
+def save(df, name, cfg):
+    outdir = Path(cfg["paths"]["raw"]); outdir.mkdir(parents=True, exist_ok=True)
+    path = outdir / f"{name}.csv"
+    df.to_csv(path, index=False)
+    return path
 
 
 if __name__ == "__main__":
     cfg = load_config()
-    logger = setup_logger("ingest_city_data",  f"{cfg['paths']['logs']}/ingest_city_data.log")
+    logger = setup_logger("ingest_city_data")
 
-    air_df = fetch_air_quality(cfg, logger)
-    weather_df = fetch_weather(cfg, logger)
-    mobility_df = fetch_mobility_data(cfg, logger)
+    datasets = {
+        "weather": fetch_weather(cfg, logger),
+        "air_quality": fetch_air_quality(cfg, logger),
+        "mobility": fetch_mobility(cfg, logger),
+        "energy": fetch_energy(cfg, logger)
+    }
 
-    if not air_df.empty:
-        save_data(air_df, "air_quality", cfg["paths"]["raw"])
-    if not weather_df.empty:
-        save_data(weather_df, "weather", cfg["paths"]["raw"])
-    if not mobility_df.empty:
-        save_data(mobility_df, "mobility", cfg["paths"]["raw"])
+    for name, df in datasets.items():
+        if not df.empty:
+            save(df, name, cfg)
+            logger.info(f"✅ Saved {name} data.")
+        else:
+            logger.warning(f"⚠️ {name} data unavailable.")
 
-    logger.info("✅ City data ingestion complete.")
+    logger.info("🌆 CityPulse ingestion completed successfully.")
