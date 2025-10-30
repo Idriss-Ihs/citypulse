@@ -1,9 +1,16 @@
 # CityPulse Configuration
 
 data_sources:
-  air_quality: "https://api.openaq.org/v2/measurements"
   weather: "https://api.open-meteo.com/v1/forecast"
-  traffic: "https://data.transportation.gov/resource/traffic.json"  
+  air_quality: "https://air-quality-api.open-meteo.com/v1/air-quality"
+  mobility_zip: "https://www.gstatic.com/covid19/mobility/Region_Mobility_Report_CSVs.zip"
+  energy_csv: "https://energydata.info/dataset/bc7e5da9-b032-4f05-aaa3-17a1eb92a4f0/resource/9a7b53d7-2f1a-4ae2-b59a-bcf88b4b52b2/download/electricity_consumption.csv"
+  lights: "https://ladsweb.modaps.eosdis.nasa.gov/archive/allData/5200/VNP46A1/"
+  
+city:
+  name: "Casablanca"
+  latitude: 33.5731
+  longitude: -7.5898
 
 paths:
   raw: "data/raw"
