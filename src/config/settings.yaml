@@ -6,11 +6,18 @@ data_sources:
   mobility_zip: "https://www.gstatic.com/covid19/mobility/Region_Mobility_Report_CSVs.zip"
   energy_csv: "https://energydata.info/dataset/bc7e5da9-b032-4f05-aaa3-17a1eb92a4f0/resource/9a7b53d7-2f1a-4ae2-b59a-bcf88b4b52b2/download/electricity_consumption.csv"
   lights: "https://ladsweb.modaps.eosdis.nasa.gov/archive/allData/5200/VNP46A1/"
-  
-city:
-  name: "Casablanca"
-  latitude: 33.5731
-  longitude: -7.5898
+
+citypulse:
+  tz: "Africa/Casablanca"
+  start_date: "2022-01-01"
+  end_date: "2024-12-31"
+  cities:
+    Casablanca: [33.5731, -7.5898]
+    Rabat: [34.0209, -6.8416]
+    Marrakech: [31.6295, -7.9811]
+    Tangier: [35.7595, -5.83395]
+    Agadir: [30.4278, -9.5981]
+
 
 paths:
   raw: "data/raw"

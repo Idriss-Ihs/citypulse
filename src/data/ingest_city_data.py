@@ -84,7 +84,7 @@ def save(df, name, cfg):
 
 if __name__ == "__main__":
     cfg = load_config()
-    logger = setup_logger("ingest_city_data")
+    logger = setup_logger("ingest_city_data",f"{cfg['paths']['logs']}")
 
     datasets = {
         "weather": fetch_weather(cfg, logger),
