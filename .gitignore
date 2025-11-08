@@ -8,6 +8,7 @@ venv/
 data/raw/*
 data/interim/*
 data/processed/*
+data/reports/*
 
 # Logs & temp
 logs/
