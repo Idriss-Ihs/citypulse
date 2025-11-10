@@ -115,6 +115,6 @@ with st.container():
 st.subheader("Values")
 st.dataframe(
     day[["city","health_score","air_score","temp_score","precip_score","wind_score"]]
-    .sort_values("city"),
+    .sort_values("health_score", ascending=False),
     use_container_width=True
 )
