@@ -79,9 +79,10 @@ layer = pdk.Layer(
 deck = pdk.Deck(
     layers=[layer],
     initial_view_state=view,
-    tooltip={"text": "{city}\nhealth={health_score:.1f}\n"+metric+"={"+metric+":.1f}"}
+    tooltip={"html": f"<b>{{city}}</b><br>health: {{health_score}}<br>{metric}: {{{metric}}}"}
 )
 st.pydeck_chart(deck)
+
 
 # ---------------------------
 # Professional legend card
