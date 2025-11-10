@@ -15,17 +15,16 @@ from src.data.utils import load_config
 from src.utils.logger import setup_logger
 
 def build_city_features(df: pd.DataFrame) -> pd.DataFrame:
-    # Basic stats per city
     agg = df.groupby("city").agg(
-        health_mean=("health_score","mean"),
-        health_std =("health_score","std"),
-        aqi_mean   =("AQI","mean"),
-        aqi_p95    =("AQI", lambda s: np.nanpercentile(s.dropna(),95) if s.notna().any() else np.nan),
-        tmax_mean  =("temp_max","mean"),
-        precip_sum =("precip","sum"),
-        wind_p90   =("wind_max", lambda s: np.nanpercentile(s.dropna(),90) if s.notna().any() else np.nan),
-        n_days     =("date","nunique")
+    health_mean=("health_score","mean"),
+    health_std =("health_score","std"),
+    air_mean=("air_score","mean"),
+    temp_mean=("temp_score","mean"),
+    precip_mean=("precip_score","mean"),
+    wind_mean=("wind_score","mean"),
+    n_days     =("date","nunique")
     ).reset_index()
+
     return agg
 
 def main():
@@ -42,7 +41,7 @@ def main():
     feats.to_parquet(outdir / "city_features.parquet", index=False)
 
     # Prepare for clustering
-    Xcols = ["health_mean","health_std","aqi_mean","aqi_p95","tmax_mean","precip_sum","wind_p90"]
+    Xcols = ["health_mean","health_std","air_mean","temp_mean","precip_mean","wind_mean"]
     X = feats[Xcols].fillna(feats[Xcols].median())
     Xs = StandardScaler().fit_transform(X)
 
