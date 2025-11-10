@@ -59,7 +59,7 @@ def main():
 
         drivers = ev.apply(top_contributors, axis=1)
         ev = pd.concat([ev, drivers], axis=1)
-        out_rows.append(ev[["date","city","event_type","severity","driver_1","driver_2","air_score","temp_score","precip_score","wind_score","air_score_z","temp_score_z","precip_score_z","wind_score_z"]])
+        out_rows.append(ev[["date","city","event_type","severity","driver_1","driver_2","health_score","air_score","temp_score","precip_score","wind_score","air_score_z","temp_score_z","precip_score_z","wind_score_z"]])
 
     if out_rows:
         expl = pd.concat(out_rows, ignore_index=True).sort_values(["city","date"])
