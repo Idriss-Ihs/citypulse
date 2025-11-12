@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "processed"
 
 st.set_page_config(page_title="CityPulse Dashboard", layout="wide", page_icon="🌆")
-st.title("🌆 CityPulse — Smart City Health Dashboard")
+st.title("CityPulse — Smart City Health Dashboard")
 
 # ===============================
 # LOAD DATA
@@ -21,7 +21,6 @@ st.title("🌆 CityPulse — Smart City Health Dashboard")
 df = pd.read_parquet(DATA / "citypulse_health_daily.parquet")
 df["date"] = pd.to_datetime(df["date"])
 
-# Merge city coordinates from settings.yaml
 cfg = yaml.safe_load(open(ROOT / "src" / "config" / "settings.yaml"))
 coords = pd.DataFrame(
     [(c, latlon[0], latlon[1]) for c, latlon in cfg["citypulse"]["cities"].items()],
@@ -29,7 +28,7 @@ coords = pd.DataFrame(
 )
 df = df.merge(coords, on="city", how="left")
 
-# Events (optional)
+
 events_path = DATA / "citypulse_event_explanations.parquet"
 events = pd.read_parquet(events_path) if events_path.exists() else pd.DataFrame()
 if not events.empty:
@@ -38,7 +37,7 @@ if not events.empty:
 # ===============================
 # SIDEBAR FILTERS
 # ===============================
-st.sidebar.header("🎛️ Filters")
+st.sidebar.header("Filters")
 picked_date = st.sidebar.date_input("Select date", value=df["date"].max())
 selected_city = st.sidebar.selectbox("City", sorted(df["city"].unique()))
 metric = st.sidebar.selectbox(
@@ -60,12 +59,10 @@ for c in ["health_score", "air_score", "temp_score", "precip_score", "wind_score
     day[c] = day[c].round(1)
     city_df[c] = city_df[c].round(1)
 
-# Scale radius by selected metric
 v = day[metric].fillna(0)
 norm = (v - v.min()) / (v.max() - v.min()) if v.max() != v.min() else v * 0
 day["radius"] = (norm * 15000) + 8000
 
-# Color by health (green good → red bad)
 h = day["health_score"].fillna(60)
 day["color"] = list(zip((100 - h) * 2.2, h * 2.0, 80 + 0 * h))  # (R,G,B)
 
@@ -74,7 +71,6 @@ day["color"] = list(zip((100 - h) * 2.2, h * 2.0, 80 + 0 * h))  # (R,G,B)
 # ===============================
 col1, col2, col3 = st.columns([1.3, 2.7, 1.5])
 
-# 1) METRIC CARDS
 with col1:
     st.markdown(f"### {selected_city} — Daily Scores ({date.date()})")
     latest = city_df[city_df["date"] == date]
@@ -101,13 +97,11 @@ with col1:
     else:
         st.warning("No data for this date.")
 
-# 2) MAP (with free OpenStreetMap basemap, no Mapbox token needed)
 with col2:
     st.markdown("### Urban Health Map")
 
     view = pdk.ViewState(latitude=33.9, longitude=-6.3, zoom=5.8)
 
-    # ✅ Free basemap via TileLayer (no Mapbox token)
     basemap = pdk.Layer(
         "TileLayer",
         data="https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -146,7 +140,6 @@ with col2:
         </div>
         """, unsafe_allow_html=True)
 
-# 3) TREND + EVENT
 with col3:
     st.markdown("### Health Trend")
     smooth = city_df["health_score"].rolling(15, min_periods=1).mean()
@@ -161,7 +154,7 @@ with col3:
     #     mode="markers", marker=dict(size=4, color="#10A37F", opacity=0.35),
     #     name="Daily"
     # ))
-    fig.update_layout(
+    fig.update_layout(  
         template="plotly_white",
         height=260,
         margin=dict(l=0, r=0, t=25, b=0),
@@ -178,7 +171,7 @@ with col3:
 
         if not window.empty:
             e = window.iloc[0]
-            dstr = e["date"].strftime("%Y-%m-%d")  # ✅ fix: Timestamp formatting
+            dstr = e["date"].strftime("%Y-%m-%d")
             st.markdown(
                 f"""
                 **Event:** {e['event_type']} ({dstr})  
