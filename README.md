@@ -86,6 +86,13 @@ The final system provides:
 - A **functional Smart City digital twin** prototype that transforms raw sensor data into interpretable health analytics  
 - A strong proof of concept in **data fusion, environmental intelligence, and explainable analytics**
 
+<p align="center">
+  <img src="assets\CityPulse_Dashboard.png" width="800" alt="CityPulse Dashboard Preview">
+  <br>
+  <em>Interactive Smart City Health Dashboard (CityPulse)</em>
+</p>
+
+
 CityPulse stands as a showcase of **versatility, technical depth, and design sense**, uniting advanced data science with real-world relevance.
 
 ---
